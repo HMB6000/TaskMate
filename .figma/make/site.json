@@ -1,0 +1,11 @@
+{
+  "title": "Task Mate",
+  "description": "Group projects, shared fairly. Clear owners, deadlines, and live progress for student teams.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,295 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model (mirrors src/remote.ts)
+// ===============================================================
+//
+// Collection: users            Doc ID: Firebase Auth uid
+//   - name: string (required, 1-60)
+//   - email: string (required, <= 254)       PII -> owner-only access
+//   - prefs: map (required, fixed keys: scale, contrast, calm, spacious, remind, stuckAlerts, comments)
+//   - projectIds: list<string> (required, <= 50)
+//   - createdAt: ISO string (required, immutable)
+//
+// Collection: users/{uid}/notifications   Doc ID: auto
+//   - projectId: string (required)  - project the sender and recipient share
+//   - from: string (required)       - sender uid, must equal request.auth.uid
+//   - text: string (required, 1-300)
+//   - kind: 'stuck' | 'comment' | 'assign' | 'reminder'
+//   - at: ISO string (required)
+//   - read: bool (required; the only field the recipient may change)
+//   - taskId: string (optional, <= 40)
+//
+// Collection: invites          Doc ID: 8-char invite code
+//   - projectId: string (required)
+//
+// Collection: projects         Doc ID: auto
+//   - name: string (required, 1-80)
+//   - ownerId: string (required, immutable)
+//   - inviteCode: string (required, 8 chars; owner may rotate)
+//   - createdAt: ISO string (required, immutable)
+//
+// Collection: projects/{pid}/members      Doc ID: member uid
+//   - uid: string (== doc id, immutable)
+//   - name: string (1-60), role: string (0-60), color: '#rrggbb'
+//   - joinedAt: ISO string (immutable), lastActive: ISO string
+//   - inviteCode: string (proof used to join; immutable)
+//
+// Collection: projects/{pid}/tasks        Doc ID: auto
+//   - title: string (1-200), desc: string (0-5000)
+//   - status: 'todo' | 'progress' | 'stuck' | 'done'
+//   - owner: string (uid of a current member)
+//   - due: 'YYYY-MM-DD' string
+//   - subtasks: list (<= 30)
+//   - createdAt: ISO string (immutable), createdBy: uid (immutable)
+//   - deleted: bool (soft delete so Undo works)
+//
+// Collection: projects/{pid}/comments     Doc ID: auto
+//   - taskId: string, author: uid or 'system', text: string (1-2000)
+//   - at: ISO string, replyTo: string (optional)
+//   Comments are immutable; only the author can delete their own.
+//
+// Collection: projects/{pid}/activity     Doc ID: auto
+//   - text: string (1-300), at: ISO string, by: uid (== request.auth.uid)
+//   Append-only.
+//
+// Note: timestamps are stored as ISO strings to keep the client simple. The
+// rules check their format, not whether they are truthful.
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function data() {
+      return request.resource.data;
+    }
+    function hasOnlyAllowedFields(fields) {
+      return data().keys().hasOnly(fields);
+    }
+    function hasRequiredFields(fields) {
+      return data().keys().hasAll(fields);
+    }
+    function areImmutableFieldsUnchanged(fields) {
+      return !data().diff(resource.data).affectedKeys().hasAny(fields);
+    }
+    function onlyChanges(fields) {
+      return data().diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    function validString(v, minLen, maxLen) {
+      return v is string && v.size() >= minLen && v.size() <= maxLen;
+    }
+    function isValidIsoString(v) {
+      return v is string && v.size() <= 40 &&
+        v.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$');
+    }
+    function isValidDay(v) {
+      return v is string && v.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+    function isValidId(v) {
+      return v is string && v.size() > 0 && v.size() <= 40;
+    }
+
+    // Membership checks. getAfter/existsAfter see writes in the same batch,
+    // which lets "create project + add myself as member" happen atomically.
+    function projectPath(pid) {
+      return /databases/$(database)/documents/projects/$(pid);
+    }
+    function memberPath(pid, uid) {
+      return /databases/$(database)/documents/projects/$(pid)/members/$(uid);
+    }
+    function isMember(pid) {
+      return isAuthenticated() && exists(memberPath(pid, request.auth.uid));
+    }
+    function isProjectOwner(pid) {
+      return isAuthenticated() && get(projectPath(pid)).data.ownerId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Domain Validators (used on BOTH create and update)
+    // ===============================================================
+    function isValidPrefs(p) {
+      return p is map &&
+        p.keys().hasOnly(['scale', 'contrast', 'calm', 'spacious', 'remind', 'stuckAlerts', 'comments']) &&
+        p.keys().hasAll(['scale', 'contrast', 'calm', 'spacious', 'remind', 'stuckAlerts', 'comments']) &&
+        p.scale is number && p.scale >= 1 && p.scale <= 1.5 &&
+        p.contrast is bool && p.calm is bool && p.spacious is bool &&
+        p.remind is bool && p.stuckAlerts is bool && p.comments is bool;
+    }
+    function isValidUser() {
+      return hasOnlyAllowedFields(['name', 'email', 'prefs', 'projectIds', 'createdAt']) &&
+        hasRequiredFields(['name', 'email', 'prefs', 'projectIds', 'createdAt']) &&
+        validString(data().name, 1, 60) &&
+        validString(data().email, 3, 254) &&
+        isValidPrefs(data().prefs) &&
+        data().projectIds is list && data().projectIds.size() <= 50 &&
+        isValidIsoString(data().createdAt);
+    }
+
+    function isValidProject() {
+      return hasOnlyAllowedFields(['name', 'ownerId', 'inviteCode', 'createdAt']) &&
+        hasRequiredFields(['name', 'ownerId', 'inviteCode', 'createdAt']) &&
+        validString(data().name, 1, 80) &&
+        isValidId(data().ownerId) &&
+        data().inviteCode is string && data().inviteCode.matches('^[A-Z0-9]{8}$') &&
+        isValidIsoString(data().createdAt);
+    }
+
+    function isValidMember(uid) {
+      return hasOnlyAllowedFields(['uid', 'name', 'role', 'color', 'joinedAt', 'lastActive', 'inviteCode']) &&
+        hasRequiredFields(['uid', 'name', 'role', 'color', 'joinedAt', 'lastActive', 'inviteCode']) &&
+        data().uid == uid &&
+        validString(data().name, 1, 60) &&
+        validString(data().role, 0, 60) &&
+        data().color is string && data().color.matches('^#[0-9a-fA-F]{6}$') &&
+        isValidIsoString(data().joinedAt) &&
+        isValidIsoString(data().lastActive) &&
+        data().inviteCode is string && data().inviteCode.size() <= 12;
+    }
+
+    function isValidTask(pid) {
+      return hasOnlyAllowedFields(['title', 'desc', 'status', 'owner', 'due', 'subtasks', 'createdAt', 'createdBy', 'deleted']) &&
+        hasRequiredFields(['title', 'desc', 'status', 'owner', 'due', 'subtasks', 'createdAt', 'createdBy', 'deleted']) &&
+        validString(data().title, 1, 200) &&
+        validString(data().desc, 0, 5000) &&
+        data().status in ['todo', 'progress', 'stuck', 'done'] &&
+        isValidId(data().owner) &&
+        isValidDay(data().due) &&
+        data().subtasks is list && data().subtasks.size() <= 30 &&
+        isValidIsoString(data().createdAt) &&
+        isValidId(data().createdBy) &&
+        data().deleted is bool;
+    }
+
+    function isValidComment() {
+      return hasOnlyAllowedFields(['taskId', 'author', 'text', 'at', 'replyTo']) &&
+        hasRequiredFields(['taskId', 'author', 'text', 'at']) &&
+        isValidId(data().taskId) &&
+        (data().author == request.auth.uid || data().author == 'system') &&
+        validString(data().text, 1, 2000) &&
+        isValidIsoString(data().at) &&
+        (!('replyTo' in data()) || isValidId(data().replyTo));
+    }
+
+    function isValidActivity() {
+      return hasOnlyAllowedFields(['text', 'at', 'by']) &&
+        hasRequiredFields(['text', 'at', 'by']) &&
+        validString(data().text, 1, 300) &&
+        isValidIsoString(data().at) &&
+        data().by == request.auth.uid;
+    }
+
+    function isValidNotification() {
+      return hasOnlyAllowedFields(['projectId', 'from', 'text', 'kind', 'at', 'read', 'taskId']) &&
+        hasRequiredFields(['projectId', 'from', 'text', 'kind', 'at', 'read']) &&
+        isValidId(data().projectId) &&
+        isValidId(data().from) &&
+        validString(data().text, 1, 300) &&
+        data().kind in ['stuck', 'comment', 'assign', 'reminder'] &&
+        isValidIsoString(data().at) &&
+        data().read is bool &&
+        (!('taskId' in data()) || isValidId(data().taskId));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Private profile (contains email): only the user themselves.
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser();
+      allow update: if isOwner(userId) && isValidUser() && areImmutableFieldsUnchanged(['createdAt']);
+      allow delete: if false;
+
+      match /notifications/{notifId} {
+        allow read, delete: if isOwner(userId);
+        // A teammate may notify you only if you are both members of that project,
+        // and they can't pretend to be someone else.
+        allow create: if isAuthenticated() && isValidNotification() &&
+          data().from == request.auth.uid &&
+          data().read == false &&
+          isMember(data().projectId) &&
+          exists(memberPath(data().projectId, userId));
+        // Recipients can only mark as read.
+        allow update: if isOwner(userId) && isValidNotification() && onlyChanges(['read']);
+      }
+    }
+
+    // Invite codes: anyone signed in can look up a specific code (get), but
+    // nobody can list them, so codes can't be harvested.
+    match /invites/{code} {
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow create: if isAuthenticated() &&
+        data().keys().hasOnly(['projectId']) &&
+        isValidId(data().projectId) &&
+        getAfter(projectPath(data().projectId)).data.ownerId == request.auth.uid &&
+        getAfter(projectPath(data().projectId)).data.inviteCode == code;
+      allow update: if false;
+      allow delete: if isAuthenticated() && isProjectOwner(resource.data.projectId);
+    }
+
+    match /projects/{projectId} {
+      allow read: if isMember(projectId);
+      allow create: if isAuthenticated() && isValidProject() &&
+        data().ownerId == request.auth.uid &&
+        // The creator must add themselves as a member in the same batch.
+        existsAfter(memberPath(projectId, request.auth.uid));
+      // Only the owner can rename or rotate the code; ownership can't move.
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+        isValidProject() && areImmutableFieldsUnchanged(['ownerId', 'createdAt']);
+      allow delete: if false;
+
+      match /members/{memberId} {
+        allow read: if isMember(projectId);
+        // You can only add yourself, and only as the project's owner or with
+        // the project's current invite code.
+        allow create: if isOwner(memberId) && isValidMember(memberId) &&
+          (getAfter(projectPath(projectId)).data.ownerId == request.auth.uid ||
+           data().inviteCode == get(projectPath(projectId)).data.inviteCode);
+        // You can edit your own card (name, role, colour, presence) and nothing else.
+        allow update: if isOwner(memberId) && isValidMember(memberId) &&
+          areImmutableFieldsUnchanged(['uid', 'joinedAt', 'inviteCode']);
+        // Leave yourself (the owner can't leave), or the owner removes someone.
+        allow delete: if (isOwner(memberId) && !isProjectOwner(projectId)) ||
+          (isProjectOwner(projectId) && memberId != request.auth.uid);
+      }
+
+      match /tasks/{taskId} {
+        allow read: if isMember(projectId);
+        allow create: if isMember(projectId) && isValidTask(projectId) &&
+          data().createdBy == request.auth.uid &&
+          data().deleted == false &&
+          exists(memberPath(projectId, data().owner));
+        allow update: if isMember(projectId) && isValidTask(projectId) &&
+          areImmutableFieldsUnchanged(['createdAt', 'createdBy']) &&
+          // Re-assigning is only allowed to a current member.
+          (data().owner == resource.data.owner || exists(memberPath(projectId, data().owner)));
+        // Hard deletes are disabled; the app soft-deletes with `deleted: true`.
+        allow delete: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if isMember(projectId);
+        allow create: if isMember(projectId) && isValidComment();
+        allow update: if false;
+        allow delete: if isMember(projectId) && resource.data.author == request.auth.uid;
+      }
+
+      match /activity/{activityId} {
+        allow read: if isMember(projectId);
+        allow create: if isMember(projectId) && isValidActivity();
+        allow update, delete: if false;
+      }
+    }
+  }
+}
