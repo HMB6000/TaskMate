@@ -84,3 +84,22 @@ Security rules are defined in `firestore.rules` and enforce:
 - Authenticated user access.
 - Project-level authorization (members and owners).
 - Task and comment validation.
+
+---
+
+## ⚡ Continuous Deployment (CI/CD)
+
+An automated deployment pipeline is configured via GitHub Actions (`.github/workflows/deploy.yml`).
+
+To enable automated deploys:
+1. In your GitHub repository, navigate to **Settings** > **Secrets and variables** > **Actions**.
+2. Add your Firebase build variables under **Repository secrets**:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+3. Add `FIREBASE_SERVICE_ACCOUNT_TASKMATE_HMB`:
+   - Run `npx firebase-tools init hosting:github` locally to configure it automatically, or generate a Service Account Key in Google Cloud IAM and paste the JSON content.
+
