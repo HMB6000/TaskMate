@@ -14,12 +14,12 @@ import {
  * its own project. See .env.example.
  */
 const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB5PzbIHZLZoDQjATB3668Tajo-4JF2tb0",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "taskmate-hmb.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "taskmate-hmb",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "taskmate-hmb.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "287824017917",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:287824017917:web:3f38af0e8220889da4c194",
 };
 
 const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
