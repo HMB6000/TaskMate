@@ -65,11 +65,11 @@ export default function Projects() {
         <button type="button" className="btn btn-sm" onClick={s.signOut}><LogOut size={16} aria-hidden="true" /> Sign out</button>
       </header>
 
-      <main id="main" className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-8">
+      <main id="main" className="mx-auto max-w-5xl space-y-6 sm:space-y-8 px-3 py-6 sm:px-6 sm:py-10">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.14em] text-brand">Your projects</p>
-          <h1 className="text-4xl font-extrabold tracking-tight">Hi {name.split(" ")[0]}, pick a project</h1>
-          <p className="mt-1 text-mute">Open an existing project, start a new one, or join your group with an invite code.</p>
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.14em] text-brand">Your projects</p>
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Hi {name.split(" ")[0]}, pick a project</h1>
+          <p className="mt-1 text-sm text-mute">Open an existing project, start a new one, or join your group with an invite code.</p>
         </div>
 
         {!user.emailVerified && (

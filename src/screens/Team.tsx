@@ -35,8 +35,8 @@ function InvitePanel() {
     <section aria-labelledby="inv-h" className="card p-6">
       <h2 id="inv-h" className="flex items-center gap-2 text-xl font-extrabold"><UserPlus size={20} aria-hidden="true" /> Invite your group</h2>
       <p className="mt-1 text-sm text-mute">Anyone with this code or link can join {project.name}. Only share it with your teammates.</p>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <code className="rounded-xl border-2 border-dashed border-brand bg-brand-tint px-4 py-2 font-mono text-2xl font-bold tracking-[0.2em] text-brand-dark" aria-label={`Invite code ${project.inviteCode.split("").join(" ")}`}>
+      <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
+        <code className="rounded-xl border-2 border-dashed border-brand bg-brand-tint px-3 py-1.5 sm:px-4 sm:py-2 font-mono text-xl sm:text-2xl font-bold tracking-[0.2em] text-brand-dark" aria-label={`Invite code ${project.inviteCode.split("").join(" ")}`}>
           {project.inviteCode}
         </code>
         <button type="button" className="btn btn-sm" onClick={() => copy(project.inviteCode, "Code")}><Copy size={14} aria-hidden="true" /> Copy code</button>
@@ -134,12 +134,15 @@ export default function Team() {
         <p className="mb-5 text-sm text-mute">Tasks completed by each member. Every contribution counts towards the shared goal.</p>
         <ul className="space-y-4">
           {[...stats].sort((a, b) => b.done - a.done).map(({ m, done: d, ts }) => (
-            <li key={m.id} className="grid grid-cols-[8rem_1fr_6rem] items-center gap-4 text-sm sm:grid-cols-[10rem_1fr_8rem]">
-              <span className="flex items-center gap-2 font-semibold"><Avatar m={m} size={26} /> <span className="truncate">{m.name.split(" ")[0]}</span></span>
-              <span className="h-5 overflow-hidden rounded-full bg-[#e3e8ed]" role="img" aria-label={`${m.name}: ${d} completed`}>
+            <li key={m.id} className="grid grid-cols-[5.5rem_1fr_5rem] sm:grid-cols-[9rem_1fr_7rem] md:grid-cols-[10rem_1fr_8rem] items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+              <span className="flex items-center gap-1.5 sm:gap-2 font-semibold min-w-0">
+                <Avatar m={m} size={26} />
+                <span className="truncate">{m.name.split(" ")[0]}</span>
+              </span>
+              <span className="h-4 sm:h-5 overflow-hidden rounded-full bg-[#e3e8ed]" role="img" aria-label={`${m.name}: ${d} completed`}>
                 <span className="block h-full rounded-full bg-leaf transition-[width] duration-700" style={{ width: `${(d / maxDone) * 100}%` }} />
               </span>
-              <span className="font-semibold text-mute">{d} done · {ts.length - d} open</span>
+              <span className="font-semibold text-mute text-right truncate">{d} done · {ts.length - d} open</span>
             </li>
           ))}
         </ul>

@@ -7,24 +7,24 @@ import { Avatar, ProgressBar, STATUS, StatusBadge, Tooltip } from "../ui";
 export function Filters() {
   const { filters, setFilters, filtered, tasks, members } = useStore();
   const active = filters.status !== "all" || filters.member !== "all" || filters.deadline !== "all";
-  const sel = "field !min-h-10 !py-1.5 !w-auto";
+  const sel = "field !min-h-10 !py-1.5 w-full sm:!w-auto";
   return (
-    <section aria-label="Filter tasks" className="flex flex-wrap items-end gap-4">
-      <div>
+    <section aria-label="Filter tasks" className="flex flex-wrap items-end gap-3 sm:gap-4">
+      <div className="w-full sm:w-auto">
         <label htmlFor="f-status" className="mb-1 block text-xs font-bold uppercase tracking-wide text-mute">Status</label>
         <select id="f-status" className={sel} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value as Status | "all" })}>
           <option value="all">All statuses</option>
           {STATUSES.map((k) => <option key={k} value={k}>{STATUS[k].label}</option>)}
         </select>
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label htmlFor="f-member" className="mb-1 block text-xs font-bold uppercase tracking-wide text-mute">Team member</label>
         <select id="f-member" className={sel} value={filters.member} onChange={(e) => setFilters({ ...filters, member: e.target.value })}>
           <option value="all">Everyone</option>
           {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label htmlFor="f-dl" className="mb-1 block text-xs font-bold uppercase tracking-wide text-mute">Deadline</label>
         <select id="f-dl" className={sel} value={filters.deadline} onChange={(e) => setFilters({ ...filters, deadline: e.target.value as typeof filters.deadline })}>
           <option value="all">Any time</option>
@@ -33,7 +33,7 @@ export function Filters() {
           <option value="later">Later</option>
         </select>
       </div>
-      <p role="status" className="pb-2 text-sm font-semibold text-mute">
+      <p role="status" className="pb-1 sm:pb-2 text-xs sm:text-sm font-semibold text-mute">
         Showing {filtered.length} of {tasks.length} tasks{active && " (filtered)"}
       </p>
       {active && <button type="button" className="btn btn-sm mb-0.5" onClick={() => setFilters(NO_FILTERS)}>Clear filters</button>}
@@ -117,36 +117,71 @@ function TaskCard({ t }: { t: Task }) {
 export function Board() {
   const s = useStore();
   const [over, setOver] = useState<Status | null>(null);
+  const [mobileCol, setMobileCol] = useState<Status | "all">("all");
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {STATUSES.map((k) => {
-        const m = STATUS[k];
-        const Icon = m.icon;
-        const list = s.filtered.filter((t) => t.status === k);
-        return (
-          <section
-            key={k}
-            aria-labelledby={`col-${k}`}
-            onDragOver={(e) => { e.preventDefault(); setOver(k); }}
-            onDragLeave={() => setOver(null)}
-            onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); if (id) s.setStatus(id, k); }}
-            className={`rounded-2xl border-2 p-3 transition ${over === k ? "border-dashed border-brand bg-brand-tint" : "border-transparent bg-[#ebeef1]"}`}
-          >
-            <header className="mb-3 flex items-center justify-between px-1">
-              <Tooltip text={m.help}>
-                <h3 id={`col-${k}`} tabIndex={0} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold ${m.chip}`}>
-                  <Icon size={15} aria-hidden="true" /> {m.label}
-                </h3>
-              </Tooltip>
-              <span className="text-sm font-bold text-mute" aria-label={`${list.length} tasks`}>{list.length}</span>
-            </header>
-            <div className="space-y-3">
-              {list.map((t) => <TaskCard key={t.id} t={t} />)}
-              {list.length === 0 && <p className="rounded-xl border border-dashed border-[#aab3bc] p-4 text-center text-sm text-mute">No tasks here. Drop a card to move it.</p>}
-            </div>
-          </section>
-        );
-      })}
+    <div className="space-y-4">
+      {/* Mobile-only horizontal column switcher */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 md:hidden scroll-quiet" role="tablist" aria-label="Columns">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileCol === "all"}
+          className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition ${mobileCol === "all" ? "bg-brand text-white shadow-sm" : "bg-canvas text-mute hover:text-ink"}`}
+          onClick={() => setMobileCol("all")}
+        >
+          All ({s.filtered.length})
+        </button>
+        {STATUSES.map((k) => {
+          const count = s.filtered.filter((t) => t.status === k).length;
+          const on = mobileCol === k;
+          return (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition ${on ? "bg-brand text-white shadow-sm" : "bg-canvas text-mute hover:text-ink"}`}
+              onClick={() => setMobileCol(k)}
+            >
+              {STATUS[k].label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {STATUSES.map((k) => {
+          const m = STATUS[k];
+          const Icon = m.icon;
+          const list = s.filtered.filter((t) => t.status === k);
+          const isHiddenOnMobile = mobileCol !== "all" && mobileCol !== k;
+
+          return (
+            <section
+              key={k}
+              aria-labelledby={`col-${k}`}
+              onDragOver={(e) => { e.preventDefault(); setOver(k); }}
+              onDragLeave={() => setOver(null)}
+              onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); if (id) s.setStatus(id, k); }}
+              className={`${isHiddenOnMobile ? "hidden md:block" : "block"} rounded-2xl border-2 p-3 transition ${over === k ? "border-dashed border-brand bg-brand-tint" : "border-transparent bg-[#ebeef1]"}`}
+            >
+              <header className="mb-3 flex items-center justify-between px-1">
+                <Tooltip text={m.help}>
+                  <h3 id={`col-${k}`} tabIndex={0} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold ${m.chip}`}>
+                    <Icon size={15} aria-hidden="true" /> {m.label}
+                  </h3>
+                </Tooltip>
+                <span className="text-sm font-bold text-mute" aria-label={`${list.length} tasks`}>{list.length}</span>
+              </header>
+              <div className="space-y-3">
+                {list.map((t) => <TaskCard key={t.id} t={t} />)}
+                {list.length === 0 && <p className="rounded-xl border border-dashed border-[#aab3bc] p-4 text-center text-sm text-mute">No tasks here. Drop a card to move it.</p>}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -195,30 +230,30 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.14em] text-brand">Dashboard</p>
-          <h1 className="text-4xl font-extrabold tracking-tight">{s.projectName}</h1>
-          <p className="mt-1 text-mute">One shared view of what is happening, who owns it, and when it is due.</p>
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.14em] text-brand">Dashboard</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{s.projectName}</h1>
+          <p className="mt-1 text-sm text-mute">One shared view of what is happening, who owns it, and when it is due.</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => s.setCreateOpen(true)}><Plus size={18} aria-hidden="true" /> Add Task</button>
+        <button type="button" className="btn btn-primary w-full sm:w-auto" onClick={() => s.setCreateOpen(true)}><Plus size={18} aria-hidden="true" /> Add Task</button>
       </div>
 
-      <section aria-labelledby="ov-h" className="card p-6 sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-6">
+      <section aria-labelledby="ov-h" className="card p-5 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
           <div>
-            <h2 id="ov-h" className="font-bold text-mute">Overall project progress</h2>
-            <p className="text-6xl font-extrabold tracking-tight" style={{ color: s.percent >= 100 ? "#2f7a33" : "#2f6fb5" }}>{s.percent}%</p>
+            <h2 id="ov-h" className="text-xs sm:text-sm font-bold uppercase tracking-wide text-mute">Overall project progress</h2>
+            <p className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight" style={{ color: s.percent >= 100 ? "#2f7a33" : "#2f6fb5" }}>{s.percent}%</p>
           </div>
-          <ul className="flex flex-wrap gap-2" aria-label="Task counts by status">
+          <ul className="flex flex-wrap gap-1.5 sm:gap-2" aria-label="Task counts by status">
             {counts.map(([k, c]) => (
-              <li key={k} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold ${STATUS[k].chip}`}>
-                {(() => { const I = STATUS[k].icon; return <I size={15} aria-hidden="true" />; })()} {STATUS[k].label}
-                <span className="rounded-md bg-white/70 px-1.5">{c}</span>
+              <li key={k} className={`flex items-center gap-1.5 sm:gap-2 rounded-xl border px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-bold ${STATUS[k].chip}`}>
+                {(() => { const I = STATUS[k].icon; return <I size={14} aria-hidden="true" />; })()} {STATUS[k].label}
+                <span className="rounded-md bg-white/70 px-1.5 text-xs">{c}</span>
               </li>
             ))}
           </ul>
         </div>
-        <div className="mt-5"><ProgressBar value={s.percent} label="Overall project completion" h={18} /></div>
-        <p className="mt-3 text-sm text-mute">
+        <div className="mt-4 sm:mt-5"><ProgressBar value={s.percent} label="Overall project completion" h={14} /></div>
+        <p className="mt-2.5 text-xs sm:text-sm text-mute">
           {s.percent >= 100 ? "Every task is complete. Wonderful teamwork." : "Every completed task moves the whole team forward."}
         </p>
       </section>

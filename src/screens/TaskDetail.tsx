@@ -30,18 +30,18 @@ export default function TaskDetail({ id }: { id: string }) {
   return (
     <>
       <Dialog title={task.title} onClose={close} side labelId="td-h">
-        <div className="flex items-start justify-between gap-4 border-b border-line p-6">
+        <div className="flex items-start justify-between gap-3 border-b border-line p-4 sm:p-6">
           <div className="min-w-0">
             <StatusBadge status={task.status} />
-            <h2 id="td-h" className="mt-3 text-3xl font-extrabold tracking-tight">{task.title}</h2>
-            <p className="mt-2 text-mute">{task.desc || "No description yet."}</p>
+            <h2 id="td-h" className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight">{task.title}</h2>
+            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-mute">{task.desc || "No description yet."}</p>
           </div>
           <CloseButton onClick={close} label="Close task details" />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet">
-          <section aria-labelledby="st-h" className="border-b border-line p-6">
-            <h3 id="st-h" className="mb-3 font-bold">Status</h3>
+          <section aria-labelledby="st-h" className="border-b border-line p-4 sm:p-6">
+            <h3 id="st-h" className="mb-2 sm:mb-3 text-sm sm:text-base font-bold">Status</h3>
             <div role="radiogroup" aria-label="Task status" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {STATUSES.map((k) => {
                 const m = STATUS[k];
@@ -49,32 +49,32 @@ export default function TaskDetail({ id }: { id: string }) {
                 const on = task.status === k;
                 return (
                   <Tooltip key={k} text={m.help}>
-                    <label className={`relative flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 px-2 text-sm font-bold transition hover:-translate-y-px has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#1b4f8f] ${on ? m.chip : "border-line bg-white text-ink hover:bg-canvas"}`} style={on ? { borderColor: m.color } : undefined}>
+                    <label className={`relative flex min-h-11 sm:min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 px-2 text-xs sm:text-sm font-bold transition hover:-translate-y-px has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#1b4f8f] ${on ? m.chip : "border-line bg-white text-ink hover:bg-canvas"}`} style={on ? { borderColor: m.color } : undefined}>
                       <input type="radio" name="status" className="sr-only" checked={on} onChange={() => s.setStatus(id, k)} />
-                      <Icon size={16} aria-hidden="true" /> {m.label}
+                      <Icon size={15} aria-hidden="true" /> {m.label}
                     </label>
                   </Tooltip>
                 );
               })}
             </div>
             {task.status === "stuck" && (
-              <p role="status" className="mt-4 flex items-start gap-2 rounded-xl bg-[#fdf0d8] p-3 text-sm font-medium text-[#6b3e00]">
+              <p role="status" className="mt-3 sm:mt-4 flex items-start gap-2 rounded-xl bg-[#fdf0d8] p-3 text-xs sm:text-sm font-medium text-[#6b3e00]">
                 <HeartHandshake size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
                 Your team has been notified. Someone will help soon. Asking for help is a normal part of group work.
               </p>
             )}
-            <div className="mt-5">
-              <div className="mb-1.5 flex justify-between text-sm font-semibold"><span>Task progress</span><span>{pct}%</span></div>
-              <ProgressBar value={pct} color={STATUS[task.status].color} label={`${task.title} progress`} h={12} />
+            <div className="mt-4 sm:mt-5">
+              <div className="mb-1.5 flex justify-between text-xs sm:text-sm font-semibold"><span>Task progress</span><span>{pct}%</span></div>
+              <ProgressBar value={pct} color={STATUS[task.status].color} label={`${task.title} progress`} h={10} />
             </div>
           </section>
 
-          <section aria-labelledby="dt-h" className="grid gap-5 border-b border-line p-6 sm:grid-cols-2">
+          <section aria-labelledby="dt-h" className="grid gap-4 sm:gap-5 border-b border-line p-4 sm:p-6 sm:grid-cols-2">
             <h3 id="dt-h" className="sr-only">Owner and deadline</h3>
             <div>
-              <label htmlFor="d-owner" className="mb-1.5 flex items-center gap-1.5 text-sm font-bold"><UserPlus size={16} aria-hidden="true" /> Assign Member</label>
+              <label htmlFor="d-owner" className="mb-1.5 flex items-center gap-1.5 text-xs sm:text-sm font-bold"><UserPlus size={16} aria-hidden="true" /> Assign Member</label>
               <div className="flex items-center gap-2">
-                <Avatar m={owner} size={36} />
+                <Avatar m={owner} size={34} />
                 <select id="d-owner" className="field" value={task.owner} onChange={(e) => s.assign(id, e.target.value)}>
                   {s.members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                   {!s.members.some((m) => m.id === task.owner) && <option value={task.owner}>{owner.name}</option>}
@@ -82,11 +82,11 @@ export default function TaskDetail({ id }: { id: string }) {
               </div>
             </div>
             <div>
-              <label htmlFor="d-due" className="mb-1.5 flex items-center gap-1.5 text-sm font-bold"><CalendarClock size={16} aria-hidden="true" /> Set Deadline</label>
+              <label htmlFor="d-due" className="mb-1.5 flex items-center gap-1.5 text-xs sm:text-sm font-bold"><CalendarClock size={16} aria-hidden="true" /> Set Deadline</label>
               <input id="d-due" type="date" min={today()} className="field" value={dueDraft || task.due}
                 onChange={(e) => { setDueDraft(e.target.value); if (e.target.value && e.target.value >= today()) { s.setDue(id, e.target.value); setDueDraft(""); } }}
                 aria-invalid={!!dueErr} aria-describedby="d-due-msg" />
-              <p id="d-due-msg" role={dueErr ? "alert" : undefined} className={`mt-1 text-sm font-medium ${dueErr ? "text-[#a32d26]" : "text-mute"}`}>
+              <p id="d-due-msg" role={dueErr ? "alert" : undefined} className={`mt-1 text-xs sm:text-sm font-medium ${dueErr ? "text-[#a32d26]" : "text-mute"}`}>
                 {dueErr || `${fmtDate(task.due)} · ${dueLabel(task.due, task.status === "done")}`}
               </p>
             </div>
@@ -94,7 +94,7 @@ export default function TaskDetail({ id }: { id: string }) {
               <button type="button" className="btn btn-sm" onClick={() => s.sendReminder(id)} disabled={task.status === "done"}>
                 <Bell size={16} aria-hidden="true" /> Send Reminder
               </button>
-              <span className="ml-3 text-sm text-mute">Reminders are automatic too. This sends one now.</span>
+              <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-mute block sm:inline mt-1 sm:mt-0">Reminders are automatic too. This sends one now.</span>
             </div>
           </section>
 

@@ -72,19 +72,19 @@ export default function Login() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <section aria-labelledby="hero" className="relative flex flex-col justify-between overflow-hidden bg-[#1f4c7e] p-8 text-white sm:p-14">
-        <div aria-hidden="true" className="absolute -right-24 -top-24 size-96 rounded-full bg-brand-soft/30" />
-        <div aria-hidden="true" className="absolute -bottom-32 left-10 size-80 rounded-full bg-leaf/20" />
+      <section aria-labelledby="hero" className="relative flex flex-col justify-between overflow-hidden bg-[#1f4c7e] p-6 text-white sm:p-10 lg:p-14">
+        <div aria-hidden="true" className="absolute -right-24 -top-24 size-96 rounded-full bg-brand-soft/30 pointer-events-none" />
+        <div aria-hidden="true" className="absolute -bottom-32 left-10 size-80 rounded-full bg-leaf/20 pointer-events-none" />
         <Logo light />
-        <div className="relative my-14 max-w-xl">
-          <p className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-[#bcd8f5]">Group projects, shared fairly</p>
-          <h1 id="hero" className="text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-            Everyone can see<br />who is doing what.
+        <div className="relative my-8 sm:my-14 max-w-xl">
+          <p className="mb-2 sm:mb-4 text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#bcd8f5]">Group projects, shared fairly</p>
+          <h1 id="hero" className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight">
+            Everyone can see<br className="hidden sm:inline" /> who is doing what.
           </h1>
-          <p className="mt-6 max-w-md text-lg leading-relaxed text-[#dbe9f8]">
+          <p className="mt-3 sm:mt-6 max-w-md text-sm sm:text-lg leading-relaxed text-[#dbe9f8]">
             Task Mate makes accountability visible and neutral, so nobody has to nag and nobody gets left carrying the group.
           </p>
-          <ul className="mt-10 space-y-4">
+          <ul className="mt-6 sm:mt-10 space-y-3 sm:space-y-4">
             {[
               [CheckCircle2, "Clear owners, deadlines and live progress"],
               [BellRing, "Automatic reminders in neutral language"],
@@ -93,21 +93,21 @@ export default function Login() {
             ].map(([I, t]) => {
               const Icon = I as typeof Eye;
               return (
-                <li key={t as string} className="flex items-center gap-3 text-[#eef5fc]">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-white/15"><Icon size={18} aria-hidden="true" /></span>
+                <li key={t as string} className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-base text-[#eef5fc]">
+                  <span className="flex size-7 sm:size-9 items-center justify-center rounded-full bg-white/15 shrink-0"><Icon size={16} aria-hidden="true" /></span>
                   {t as string}
                 </li>
               );
             })}
           </ul>
         </div>
-        <div className="relative max-w-sm rounded-2xl bg-white/10 p-5 backdrop-blur">
-          <div className="mb-2 flex justify-between text-sm font-semibold"><span>Our group report</span><span>68%</span></div>
+        <div className="relative max-w-sm rounded-2xl bg-white/10 p-4 sm:p-5 backdrop-blur hidden sm:block">
+          <div className="mb-2 flex justify-between text-xs sm:text-sm font-semibold"><span>Our group report</span><span>68%</span></div>
           <ProgressBar value={68} label="Sample project progress" color="#7fd37f" />
         </div>
       </section>
 
-      <main className="flex items-center justify-center bg-white p-8">
+      <main className="flex items-center justify-center bg-white p-5 sm:p-8">
         <form onSubmit={submit} noValidate className="w-full max-w-sm" aria-labelledby="login-h">
           {mode !== "reset" && (
             <div role="tablist" aria-label="Account" className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-canvas p-1">

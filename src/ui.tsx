@@ -131,15 +131,22 @@ export function Dialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <div className={`fixed inset-0 z-50 flex bg-[#1d2a38]/45 ${side ? "justify-end" : "items-center justify-center p-4"}`} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className={`fixed inset-0 z-50 flex bg-[#1d2a38]/50 backdrop-blur-xs transition-opacity ${
+        side ? "justify-end" : "items-center justify-center p-2 sm:p-4"
+      }`}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelId ?? id}
         tabIndex={-1}
-        className={`animate-rise flex max-h-full flex-col bg-white shadow-2xl ${
-          side ? "h-full w-full max-w-2xl" : `w-full ${wide ? "max-w-xl" : "max-w-md"} rounded-2xl`
+        className={`animate-rise flex flex-col bg-white shadow-2xl transition-all ${
+          side
+            ? "h-full w-full sm:max-w-xl md:max-w-2xl sm:border-l border-line"
+            : `w-full ${wide ? "max-w-xl" : "max-w-md"} max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2.5rem)] rounded-2xl`
         }`}
       >
         {!labelId && <h2 id={id} className="sr-only">{title}</h2>}

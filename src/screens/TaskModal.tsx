@@ -32,15 +32,15 @@ export default function TaskModal() {
   return (
     <Dialog title="Create task" onClose={close} wide labelId="ct-h">
       <form onSubmit={submit} noValidate className="flex min-h-0 flex-col">
-        <div className="flex items-start justify-between border-b border-line p-6">
+        <div className="flex items-start justify-between border-b border-line p-4 sm:p-6">
           <div>
-            <h2 id="ct-h" className="text-2xl font-extrabold">Create task</h2>
-            <p className="mt-1 text-sm text-mute">Fields marked with * are required.</p>
+            <h2 id="ct-h" className="text-xl sm:text-2xl font-extrabold">Create task</h2>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-mute">Fields marked with * are required.</p>
           </div>
           <CloseButton onClick={close} label="Close create task" />
         </div>
 
-        <div className="space-y-5 overflow-y-auto p-6">
+        <div className="space-y-4 sm:space-y-5 overflow-y-auto p-4 sm:p-6">
           <div>
             <label htmlFor="t-title" className="mb-1.5 block font-semibold">Task name *</label>
             <input id="t-title" data-autofocus className="field" placeholder="e.g. Write the discussion section" value={title} maxLength={200}

@@ -100,55 +100,123 @@ function Shell() {
           You&apos;re exploring the demo. Changes aren&apos;t saved. <button type="button" className="underline" onClick={s.signOut}>{s.user ? "Back to my projects" : "Sign in or create an account"}</button>
         </p>
       )}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line bg-white px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-5">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-white px-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Logo />
           <span className="hidden h-6 w-px bg-line sm:block" aria-hidden="true" />
-          <p className="hidden truncate font-semibold sm:block"><span className="text-mute">Project:</span> {s.projectName}</p>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="hidden text-xs font-bold uppercase tracking-wider text-mute sm:inline">Project:</span>
+            <span className="truncate rounded-md bg-canvas px-2 py-1 text-xs font-bold text-ink sm:bg-transparent sm:p-0 sm:text-base sm:font-semibold max-w-[130px] xs:max-w-[180px] sm:max-w-xs md:max-w-sm">
+              {s.projectName}
+            </span>
+          </div>
           {s.live && (
-            <button type="button" className="btn btn-sm hidden md:inline-flex" onClick={s.leaveToPicker}><ArrowLeftRight size={14} aria-hidden="true" /> Switch</button>
+            <button
+              type="button"
+              className="btn btn-sm !min-h-9 !px-2 sm:!px-3 text-xs sm:text-sm"
+              onClick={s.leaveToPicker}
+              title="Switch project"
+              aria-label="Switch project"
+            >
+              <ArrowLeftRight size={14} aria-hidden="true" />
+              <span className="hidden md:inline">Switch</span>
+            </button>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => s.setNotifOpen(true)} className="btn relative !px-3" aria-label={`Notifications, ${unread} unread`}>
-            <Bell size={20} aria-hidden="true" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => s.setNotifOpen(true)}
+            className="btn relative !min-h-9 !px-2.5 sm:!min-h-10 sm:!px-3 text-xs sm:text-sm"
+            aria-label={`Notifications, ${unread} unread`}
+          >
+            <Bell size={18} aria-hidden="true" />
             <span className="hidden sm:inline">Notifications</span>
-            {unread > 0 && <span className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full bg-[#a35a00] text-xs font-bold text-white" aria-hidden="true">{unread}</span>}
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex size-5 sm:size-6 items-center justify-center rounded-full bg-[#a35a00] text-[10px] sm:text-xs font-bold text-white" aria-hidden="true">
+                {unread}
+              </span>
+            )}
           </button>
-          <button type="button" onClick={() => s.setView("team")} className="flex items-center gap-2 rounded-full p-1 hover:bg-canvas" aria-label={`${s.userName}, open team page`}>
-            <Avatar m={me} size={38} />
+          <button
+            type="button"
+            onClick={() => s.setView("team")}
+            className="flex items-center gap-2 rounded-full p-0.5 sm:p-1 hover:bg-canvas"
+            aria-label={`${s.userName}, open team page`}
+          >
+            <Avatar m={me} size={34} />
           </button>
         </div>
       </header>
 
       <div className="grid lg:grid-cols-[15rem_1fr]">
-        <aside className="border-b border-line bg-white lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:border-b-0 lg:border-r">
-          <nav aria-label="Project sections" className="flex gap-1 overflow-x-auto p-3 lg:flex-col lg:p-4">
+        {/* Desktop Sidebar */}
+        <aside className="hidden border-r border-line bg-white lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)]">
+          <nav aria-label="Project sections" className="flex flex-col gap-1 p-4">
             {NAV.map(({ id, label, icon: I }) => {
               const on = s.view === id;
               return (
-                <button key={id} type="button" aria-current={on ? "page" : undefined} onClick={() => s.setView(id)}
-                  className={`flex min-h-12 items-center gap-3 whitespace-nowrap rounded-xl px-4 font-bold transition ${on ? "bg-brand text-white shadow-sm" : "text-ink hover:bg-brand-tint"}`}>
+                <button
+                  key={id}
+                  type="button"
+                  aria-current={on ? "page" : undefined}
+                  onClick={() => s.setView(id)}
+                  className={`flex min-h-12 items-center gap-3 rounded-xl px-4 font-bold transition ${
+                    on ? "bg-brand text-white shadow-sm" : "text-ink hover:bg-brand-tint"
+                  }`}
+                >
                   <I size={20} aria-hidden="true" /> {label}
                 </button>
               );
             })}
           </nav>
-          <div className="hidden px-6 pt-4 lg:block">
+          <div className="px-6 pt-4">
             <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-mute">Team</h2>
             <ul className="space-y-2.5">
               {s.members.map((m) => (
-                <li key={m.id} className="flex items-center gap-2.5 text-sm font-semibold"><Avatar m={m} size={28} />{m.name.split(" ")[0]}<span className="ml-auto text-xs font-medium text-mute">{m.online ? "online" : "away"}</span></li>
+                <li key={m.id} className="flex items-center gap-2.5 text-sm font-semibold">
+                  <Avatar m={m} size={28} />
+                  <span className="truncate">{m.name.split(" ")[0]}</span>
+                  <span className="ml-auto text-xs font-medium text-mute">{m.online ? "online" : "away"}</span>
+                </li>
               ))}
             </ul>
           </div>
-          <div className="hidden p-4 lg:absolute lg:bottom-0 lg:block lg:w-full">
-            <button type="button" className="btn w-full" onClick={s.signOut}><LogOut size={18} aria-hidden="true" /> {s.demo ? "Leave demo" : "Sign out"}</button>
+          <div className="absolute bottom-0 w-full p-4">
+            <button type="button" className="btn w-full" onClick={s.signOut}>
+              <LogOut size={18} aria-hidden="true" /> {s.demo ? "Leave demo" : "Sign out"}
+            </button>
           </div>
         </aside>
 
-        <main id="main" tabIndex={-1} className="min-w-0 px-4 py-8 sm:px-8 lg:px-10">
-          <div className="mx-auto max-w-[1200px]"><Page /></div>
+        {/* Mobile & Tablet Bottom Navigation Bar */}
+        <nav
+          aria-label="Mobile navigation"
+          className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-around border-t border-line bg-white/95 px-2 py-2 backdrop-blur-md lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+        >
+          {NAV.map(({ id, label, icon: I }) => {
+            const on = s.view === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-current={on ? "page" : undefined}
+                onClick={() => s.setView(id)}
+                className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-xs font-bold transition ${
+                  on ? "text-brand" : "text-mute hover:text-ink"
+                }`}
+              >
+                <span className={`flex size-8 items-center justify-center rounded-lg transition-colors ${on ? "bg-brand-tint text-brand" : ""}`}>
+                  <I size={19} aria-hidden="true" />
+                </span>
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <main id="main" tabIndex={-1} className="min-w-0 px-3 py-6 pb-24 sm:px-6 sm:py-8 sm:pb-28 lg:px-10 lg:pb-12">
+          <div className="mx-auto max-w-[1240px]"><Page /></div>
         </main>
       </div>
 
